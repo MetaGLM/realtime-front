@@ -74,7 +74,7 @@ import {
 import emitter from "@/utils/event";
 
 export default {
-  name: "Experience",
+  name: "AudioVideoCall",
   data() {
     return {
       apiKey: "", // api key
@@ -101,31 +101,7 @@ export default {
         },
         output_audio_format: "mp3", // 音频输出格式，支持mp3、pcm
         input_audio_format: "wav", // 音频输入格式，支持wav；
-        tools: [
-          // {
-          //   type: 'function',
-          //   name: 'get_flight_number',
-          //   description: '根据始发地、目的地和日期，查询对应日期的航班号',
-          //   parameters: {
-          //     type: 'object',
-          //     properties: {
-          //       departure: {
-          //         description: '出发地',
-          //         type: 'string'
-          //       },
-          //       destination: {
-          //         description: '目的地',
-          //         type: 'string'
-          //       },
-          //       date: {
-          //         description: '日期',
-          //         type: 'string'
-          //       }
-          //     },
-          //     required: ['departure', 'destination', 'date']
-          //   }
-          // }
-        ],
+        tools: [],
       },
       vadType: VAD_TYPE.CLIENT_VAD, // VAD类型，server_vad:服务端VAD，client_vad:客户端VAD
       responseType: "", // 返回类型，text:文本，audio:音频
@@ -178,7 +154,7 @@ export default {
     openWS(mediaType = MEDIA_TYPE.AUDIO) {
       // 创建 SockJS 连接
       if (!this.apiKey) {
-        this.$message.error("请输入APIKEY！");
+        this.$message.warning("请输入APIKEY！");
         return;
       }
       if (this.sock && this.sock.readyState !== WebSocket.CLOSED) {
@@ -188,8 +164,7 @@ export default {
       this.isConnecting = true;
       this.isConnected = false;
 
-      const url = `wss://test.bigmodel.cn/stage-api/paas/v4/realtime?Authorization=${this.apiKey}`;
-      // const url = `wss://open.bigmodel.cn/api/paas/v4/realtime?Authorization=${this.apiKey}`;
+      const url = `wss://open.bigmodel.cn/api/paas/v4/realtime?Authorization=${this.apiKey}`;
       // 创建 WebSocket 连接
       this.sock = new WebSocket(url);
 

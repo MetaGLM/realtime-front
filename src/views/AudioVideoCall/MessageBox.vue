@@ -116,13 +116,12 @@
 </template>
 
 <script>
-import Loading from "../components/Loading.vue";
-import AudioBox from "../components/AudioBox.vue";
-import OutputAudio from "../components/OutputAudio.vue";
+import Loading from "@/components/Loading.vue";
+import AudioBox from "@/components/AudioBox.vue";
+import OutputAudio from "@/components/OutputAudio.vue";
 import userAvatar from "@/assets/images/user.svg";
 import robotAvatar from "@/assets/images/robot_color.png";
 import { MEDIA_TYPE, MSG_TYPE, RESPONSE_TYPE } from "@/constants/modules/audioVideoCall";
-// import TextPrint from '../components/TextPrint.vue'
 import { sleep } from "@/utils/tools";
 import {
   listenWheel,

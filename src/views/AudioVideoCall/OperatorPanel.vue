@@ -144,9 +144,9 @@
 </template>
 
 <script>
-import SystemPrompt from "../components/SystemPrompt.vue";
-import VideoBox from "../components/VideoBox";
-import ModelTools from "../components/ModelParams/ModelTools.vue";
+import SystemPrompt from "@/components/SystemPrompt.vue";
+import VideoBox from "@/components/VideoBox";
+import ModelTools from "@/components/ModelParams/ModelTools.vue";
 import { TOOLS_TYPE } from "@/constants/modules/audioVideoCall";
 import { RESPONSE_TYPE } from "@/constants/modules/audioVideoCall";
 
@@ -187,7 +187,7 @@ export default {
   },
   data() {
     return {
-      apiKey: "0b74707979d44b6d205c90cd63129169.b9cjYrzp385vbHbX", // api key
+      apiKey: "", // api key
       RESPONSE_TYPE, // 响应类型
       showTools: [TOOLS_TYPE.WEB_SEARCH],
       modelId: "glm_realtime", // 模型id

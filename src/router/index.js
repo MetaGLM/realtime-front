@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Experience from '../views/AudioVideoCall/Experience/Index.vue';
+import AudioVideoCall from '../views/AudioVideoCall/Index.vue';
 
 // 定义路由
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Experience
+    component: AudioVideoCall
   }
 ];
 
