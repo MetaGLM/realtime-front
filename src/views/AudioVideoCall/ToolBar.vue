@@ -375,7 +375,7 @@ export default {
     line-height: 36px;
     border-radius: 6px;
     &.icon-loading {
-      background-image: url("~@/assets/images/loading.gif");
+      background-image: url("@/assets/images/loading.gif");
       background-repeat: no-repeat;
       background-position: center;
       &:hover {
