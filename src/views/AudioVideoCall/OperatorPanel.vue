@@ -200,6 +200,12 @@ export default {
       },
       immediate: true,
     },
+    modelId: {
+      handler(val) {
+        this.panelParams.model = val;
+      },
+      immediate: true,
+    },
   },
   data() {
     return {
@@ -211,12 +217,16 @@ export default {
         { label: "男声", value: MODEL_TIMBRE.XIAOCHEN },
         { label: "女声", value: MODEL_TIMBRE.TONGTONG },
       ],
-      modelId: "glm_realtime", // 模型id
+      modelId: "glm-realtime", // 模型
       modelList: [
         // 模型列表
         {
-          label: "GLM-Realtime",
-          value: "glm_realtime",
+          label: "GLM-Realtime-Flash",
+          value: "glm-realtime",
+        },
+        {
+          label: "GLM-Realtime-Air",
+          value: "glm-4-realtime",
         },
       ],
       responseType: RESPONSE_TYPE.AUDIO, // 字段未定义，自定义字段，目前后端没用到输出格式是音频还是文本，会同时返回音频和文本，需要前端根据此字段是否滤掉文本

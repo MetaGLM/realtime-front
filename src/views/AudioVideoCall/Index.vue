@@ -90,6 +90,7 @@ export default {
       isConnected: false, // 是否已连接
       // 右侧参数面板参数对象
       panelParams: {
+        model: "", // 模型
         turn_detection: {
           type: VAD_TYPE.CLIENT_VAD, // 服务端VAD: server_vad，客户端VAD: client_vad
         },
