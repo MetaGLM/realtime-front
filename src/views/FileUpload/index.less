@@ -1,0 +1,83 @@
+.file-upload {
+    // 定义变量，便于维护和复用
+    @header-height: 59px;
+    @standard-padding: 24px;
+    @border-color: rgba(224, 224, 224, 0.6);
+    @primary-color: #409eff;
+    @border-radius: 8px;
+  
+    background-color: #fff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    
+    &__header {
+      height: @header-height;
+      border-bottom: 1px solid @border-color;
+      padding: 0 @standard-padding;
+      
+      h3 {
+        color: #131212;
+        font-size: 20px;
+        font-weight: 500;
+        line-height: @header-height;
+        margin: 0;
+      }
+    }
+    
+    &__content {
+      padding: @standard-padding;
+      flex: 1;
+      overflow-y: auto;
+      
+      .upload-section {
+        display: flex;
+        gap: @standard-padding;
+        margin-bottom: @standard-padding;
+  
+        // 使用CSS Grid作为备选布局方案
+        @media (max-width: 768px) {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+      }
+      
+      .upload-box {
+        flex: 1;
+        padding: 16px;
+        border: 1px dashed #dcdfe6;
+        border-radius: @border-radius;
+        transition: border-color 0.3s ease;
+        
+        &:hover {
+          border-color: @primary-color;
+        }
+        
+        h4 {
+          margin: 0 0 12px;
+          font-weight: 500;
+        }
+        
+        .file-info {
+          margin-top: 8px;
+          color: @primary-color;
+          word-break: break-all;
+          font-size: 14px;
+        }
+      }
+      
+      .process-progress {
+        margin-top: 16px;
+        padding: 12px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        
+        // 添加进度条动画
+        &.processing {
+          animation: progress-pulse 2s infinite;
+        }
+      }
+    }
+  }
+  
