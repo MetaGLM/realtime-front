@@ -91,6 +91,7 @@ export default {
       // 右侧参数面板参数对象
       panelParams: {
         model: "", // 模型
+        modalities: [RESPONSE_TYPE.AUDIO, RESPONSE_TYPE.TEXT], // 模型返回类型，text:文本，audio:音频
         turn_detection: {
           type: VAD_TYPE.CLIENT_VAD, // 服务端VAD: server_vad，客户端VAD: client_vad
         },
@@ -99,11 +100,19 @@ export default {
           chat_mode: "audio", // 通话模式，三个枚举值：音频模式 audio，主动说话 video_proactive、非主动说话 video_passive
           tts_source: "e2e", // TTS源，三个枚举值zhipu、huoshan、e2e
           auto_search: false, // 是否打开内置的自动搜索(为 true,会在服务端内置搜索工具,无需上游传入) ,  仅在 audio 模式下生效
+          greeting_config: {
+            enable: false, // 是否开启欢迎语
+            content: "您好！我是智能助理彤彤，请问有什么可以帮您？",
+          },
         },
         voice: MODEL_TIMBRE.TONGTONG, // 模型音色
-        output_audio_format: "mp3", // 音频输出格式，支持mp3、pcm
+        output_audio_format: "pcm", // 音频输出格式，支持mp3、pcm
         input_audio_format: "wav", // 音频输入格式，支持wav；
-        tools: [],
+        tools: [], // 工具列表
+        input_audio_noise_reduction: {
+          // 增加噪声字段
+          type: "near_field",
+        },
       },
       vadType: VAD_TYPE.CLIENT_VAD, // VAD类型，server_vad:服务端VAD，client_vad:客户端VAD
       responseType: "", // 返回类型，text:文本，audio:音频

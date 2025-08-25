@@ -216,6 +216,11 @@ export default {
         // 返回音频的音色
         { label: "男声", value: MODEL_TIMBRE.XIAOCHEN },
         { label: "女声", value: MODEL_TIMBRE.TONGTONG },
+        { label: "甜美女性", value: MODEL_TIMBRE.TIANMEINVXING },
+        { label: "青年男性", value: MODEL_TIMBRE.QINGNIANDAXUESHENG },
+        { label: "精英青年", value: MODEL_TIMBRE.JINGYIGNQINGNIAN },
+        { label: "萌萌女童", value: MODEL_TIMBRE.MENGMENGNVTONG },
+        { label: "少女", value: MODEL_TIMBRE.SHAONV },
       ],
       modelId: "glm-realtime", // 模型
       modelList: [
