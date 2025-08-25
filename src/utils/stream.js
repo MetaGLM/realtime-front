@@ -136,184 +136,13 @@ export function fileToArrayBuffer(file) {
   })
 }
 
-/**
- * 将解码后的audioBuffer音频数据转换为PCM格式
- * @param {AudioBuffer} audioBuffer - 解码后的音频数据
- * @returns {Object} { pcm, sampleRate } - PCM格式数据及采样率
- */
-// 将解码后的音频数据转换为PCM格式
-export function audioBufferToPCM(audioBuffer) {
-  const channels = audioBuffer.numberOfChannels
-  const sampleRate = audioBuffer.sampleRate
-  const length = audioBuffer.length * channels
-  const buffer = new Float32Array(length)
-  // 将音频数据复制到Float32Array中
-  for (let channel = 0; channel < channels; channel++) {
-    const channelData = audioBuffer.getChannelData(channel)
-    buffer.set(channelData, channel * audioBuffer.length)
-  }
-  // 将Float32Array转换为Int16Array，模拟PCM 16位格式
-  const pcm = new Int16Array(length)
-  for (let i = 0; i < length; i++) {
-    // 将浮点数缩放到16位整数范围
-    pcm[i] = buffer[i] * 0x7fff
-  }
-  return { pcm, sampleRate }
-}
-
-/**
- * 数据简单处理 - 将二维Float32Array数据转换为一维Float32Array数据
- * @param {Array} inputData  - 二维Float32Array数据
- * @param {Number} size - 合并后的一维Float32Array数据大小
- * @returns {Float32Array} 返回合并后的一维Float32Array数据
- */
-export function decompress(inputData, size) {
-  // 合并
-  const data = new Float32Array(size)
-  let offset = 0 // 偏移量计算
-  // 将二维数据，转成一维数据
-  for (let i = 0; i < inputData.length; i++) {
-    data.set(inputData[i], offset)
-    offset += inputData[i].length
-  }
-  return data
-}
-
-/**
- * PCM编码 - 将Float32Array音频数据转换为PCM编码的字节数据
- * @returns {Float32Array} bytes - Float32Array音频数据
- * @param {number} outputSampleBits - 位深度 默认16
- * @returns {DataView} 返回包含PCM编码数据的DataView对象
- */
-export function encodePCM(bytes, outputSampleBits = 16) {
-  const sampleBits = outputSampleBits // 采样位数
-  let offset = 0
-  const dataLength = bytes.length * (sampleBits / 8)
-  const buffer = new ArrayBuffer(dataLength)
-  const data = new DataView(buffer)
-
-  // 写入采样数据
-  if (sampleBits === 8) {
-    for (let i = 0; i < bytes.length; i++, offset++) {
-      // 范围[-1, 1]
-      const s = Math.max(-1, Math.min(1, bytes[i]))
-      // 8位采样位划分成2^8=256份，它的范围是0-255; 16位的划分的是2^16=65536份，范围是-32768到32767
-      // 因为我们收集的数据范围在[-1,1]，那么你想转换成16位的话，只需要对负数*32768,对正数*32767,即可得到范围在[-32768,32767]的数据。
-      // 对于8位的话，负数*128，正数*127，然后整体向上平移128(+128)，即可得到[0,255]范围的数据。
-      let val = s < 0 ? s * 128 : s * 127
-      val = parseInt(val + 128)
-      data.setInt8(offset, val, true)
-    }
-  } else {
-    for (let i = 0; i < bytes.length; i++, offset += 2) {
-      const s = Math.max(-1, Math.min(1, bytes[i]))
-      // 16位直接乘就行了
-      // 范围[-32768, 32767]
-      data.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
-    }
-  }
-
-  return data
-}
-
-/**
- * float32Array的音频pcm数据转换成Blob
- * @param {String} miniType - Blob类型
- * @param {Float32Array} float32Array - Float32Array音频数据
- * @param {Number} sampleRate - 采样率
- * @param {Number} channelCount - 声道数
- * @returns {BloB} 返回包含PCM编码数据的Blob对象
- */
-export function float32ArrayToBlob(miniType, float32Array, sampleRate = 44100, channelCount = 1) {
-  // 确定WAV文件的一些参数
-  const numChannels = 1
-  const bitsPerSample = 16
-  // 计算音频数据的长度
-  const bufferLength = float32Array.length * numChannels * (bitsPerSample / 8)
-  // 创建ArrayBuffer对象，大小为文件头长度加上音频数据长度
-  const buffer = new ArrayBuffer(44 + bufferLength)
-  const view = new DataView(buffer)
-  // 写入WAV文件头信息
-  writeString(view, 0, 'RIFF')
-  view.setUint32(4, 36 + bufferLength, true)
-  writeString(view, 8, 'WAVE')
-  writeString(view, 12, 'fmt ')
-  view.setUint32(16, 16, true)
-  view.setUint16(20, 1, true)
-  view.setUint16(22, numChannels, true)
-  view.setUint32(24, sampleRate, true)
-  view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true)
-  view.setUint16(32, numChannels * (bitsPerSample / 8), true)
-  view.setUint16(34, bitsPerSample, true)
-  writeString(view, 36, 'data')
-  view.setUint32(40, bufferLength, true)
-  // 将Float32Array转换为16位PCM数据并写入ArrayBuffer
-  let offset = 44
-  for (let i = 0; i < float32Array.length; i++) {
-    const s = Math.max(-1, Math.min(1, float32Array[i]))
-    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
-    offset += 2
-  }
-  // 创建Blob对象
-  return new Blob([buffer], { type: miniType })
-}
-
-/**
- * 将多段base64音频数据合并成一个base64音频数据
- * @param { Array<String> } audioBase64Array - 多段base64音频数据
- * @returns { String } - 合并后的base64音频数据
- */
-export function mergeAudioBase64(audioBase64Array) {
-  let combinedAudioDataLength = 0
-  const arrayBuffers = []
-  // 先将所有Base64数据转换为ArrayBuffer，并统计音频主体数据总长度，同时提取音频主体数据（去除文件头）
-  audioBase64Array.forEach(audioBase64 => {
-    const arrayBuffer = base64ToArrayBuffer(audioBase64)
-    arrayBuffers.push(arrayBuffer)
-    // 以常见的WAV格式为例，去除文件头（通常前44字节）来获取音频主体数据长度，若为其他格式需相应调整
-    combinedAudioDataLength += arrayBuffer.byteLength - 44
-  })
-  // 拼接音频主体数据
-  const combinedAudioData = new Uint8Array(combinedAudioDataLength)
-  let offset = 0
-  arrayBuffers.forEach(arrayBuffer => {
-    const audioData = arrayBuffer.slice(44)
-    combinedAudioData.set(new Uint8Array(audioData), offset)
-    offset += audioData.byteLength
-  })
-  // 重新构建文件头（这里以WAV格式为例，简单复用第一段音频的文件头信息来构建，实际需确保准确反映音频参数）
-  const wavHeader = new ArrayBuffer(44)
-  const view = new DataView(wavHeader)
-  const originalHeader = new DataView(arrayBuffers[0])
-  // 复制原文件头的相关标识等信息
-  view.setUint32(0, originalHeader.getUint32(0))
-  view.setUint32(4, combinedAudioData.byteLength + 36)
-  view.setUint32(8, originalHeader.getUint32(8))
-  view.setUint32(12, originalHeader.getUint32(12))
-  view.setUint32(16, originalHeader.getUint32(16))
-  view.setUint16(20, originalHeader.getUint16(20))
-  view.setUint16(22, originalHeader.getUint16(22))
-  view.setUint32(24, originalHeader.getUint32(24))
-  view.setUint32(28, originalHeader.getUint32(28))
-  view.setUint16(32, originalHeader.getUint16(32))
-  view.setUint16(34, originalHeader.getUint16(34))
-  view.setUint32(36, originalHeader.getUint32(36))
-  view.setUint32(40, combinedAudioData.byteLength)
-  // 拼接新文件头和合并后的音频主体数据
-  const combinedArrayBuffer = new ArrayBuffer(wavHeader.byteLength + combinedAudioData.byteLength)
-  const combinedView = new Uint8Array(combinedArrayBuffer)
-  combinedView.set(new Uint8Array(wavHeader), 0)
-  combinedView.set(combinedAudioData, 44)
-  // 最后转换回Base64格式并返回
-  return arrayBufferToBase64(combinedArrayBuffer)
-}
-
 export function concatFloat32Array(a, b) {
   const newArr = new Float32Array(a.length + b.length)
   newArr.set(a, 0)
   newArr.set(b, a.length)
   return newArr
 }
+
 export function createWavFile(audioData, sampleRate) {
   function float32ToPCM(input, output) {
     for (let i = 0; i < input.length; i++) {
@@ -386,52 +215,252 @@ export function mergeFloat32Arrays(arrays) {
   return result
 }
 
-// 获取Blob数据或文件的pcm数据
-export function convertToPCM(blob) {
+/**
+ * 从文件中提取pcm数据
+ * @param {Blob} file - 要转换的Blob对象。
+ * @returns {Uint8Array} 返回Uint8Array对象。
+ */
+export function getFilePcmData(file) {
   return new Promise((resolve, reject) => {
-    const audioContext = new AudioContext()
     const reader = new FileReader()
-    reader.onload = function(event) {
-      const arrayBuffer = event.target.result
-      audioContext.decodeAudioData(
-        arrayBuffer,
-        function(audioBuffer) {
-          const data = []
-          let size = 0
-          const numChannels = audioBuffer.numberOfChannels // 获取声道数，应为2表示双声道
-          const sampleRate = audioBuffer.sampleRate
-
-          // 遍历每个声道，分别提取PCM数据
-          for (let channel = 0; channel < numChannels; channel++) {
-            const channelData = audioBuffer.getChannelData(channel)
-            const pcmDataForThisChannel = []
-            for (let i = 0; i < channelData.length; i++) {
-              pcmDataForThisChannel.push(channelData[i])
-            }
-            data.push(new Float32Array(pcmDataForThisChannel))
-            size += pcmDataForThisChannel.length
-          }
-          resolve({
-            data,
-            size,
-            sampleRate,
-            numChannels
-          })
-        },
-        function(error) {
-          reject(error)
-        }
-      )
+    reader.onload = e => {
+      resolve(new Uint8Array(e.target.result))
     }
-    reader.readAsArrayBuffer(blob)
-    reader.onerror = function(error) {
-      reject(error)
-    }
+    reader.onerror = reject
+    reader.readAsArrayBuffer(file)
   })
+}
+
+/**
+ * 从文件中提取pcm数据
+ * @param {Blob} pcmData -  要转换的Blob对象。
+ * @returns {blob} 返回blob对象。
+ */
+export function pcmDataToWavBlob(pcmData, channels, sampleRate) {
+  const wavHeader = generateFileHeader(channels, sampleRate, pcmData.length)
+  const rawData = new Uint8Array(wavHeader.length + pcmData.length)
+  rawData.set(wavHeader)
+  rawData.set(pcmData, wavHeader.length)
+  const wavBlob = new Blob([rawData], { type: 'audio/wav' })
+  return wavBlob
+}
+
+/**
+ * 将解码后的audioBuffer音频数据转换为PCM格式
+ * @param {AudioBuffer} audioBuffer - 解码后的音频数据
+ * @returns {Object} { pcm, sampleRate } - PCM格式数据及采样率
+ */
+// 将解码后的音频数据转换为PCM格式
+export function audioBufferToPCM(audioBuffer) {
+  const channels = audioBuffer.numberOfChannels
+  const sampleRate = audioBuffer.sampleRate
+  const length = audioBuffer.length * channels
+  const buffer = new Float32Array(length)
+  // 将音频数据复制到Float32Array中
+  for (let channel = 0; channel < channels; channel++) {
+    const channelData = audioBuffer.getChannelData(channel)
+    buffer.set(channelData, channel * audioBuffer.length)
+  }
+  // 将Float32Array转换为Int16Array，模拟PCM 16位格式
+  const pcm = new Int16Array(length)
+  for (let i = 0; i < length; i++) {
+    // 将浮点数缩放到16位整数范围
+    pcm[i] = buffer[i] * 0x7fff
+  }
+  return { pcm, sampleRate }
+}
+
+/**
+ * 将PCMBase64转换为Float32Array
+ * @param {String} base64 - 音频流base64字符串
+ * @returns {Float32Array} 返回一个数组。
+ */
+export function convertPCMBase64ToFloat32Array(base64) {
+  // Decode Base64 to ArrayBuffer
+  const arrayBuffer = base64ToArrayBuffer(base64)
+
+  // Create DataView for reading PCM data
+  const dataView = new DataView(arrayBuffer)
+
+  // Calculate the number of samples
+  const numSamples = dataView.byteLength / 2 // 16-bit PCM
+
+  // Create Float32Array to hold the output
+  const float32Array = new Float32Array(numSamples)
+
+  // Iterate through the PCM data and convert to float
+  for (let i = 0; i < numSamples; i++) {
+    const int16Sample = dataView.getInt16(i * 2, true) // little-endian
+    float32Array[i] = int16Sample / 32768 // Normalize to [-1, 1]
+  }
+
+  return float32Array
+}
+
+/**
+ * 将PCMBase64字符串数组转换为一个url可播放对象
+ * @param {Array} data - 音频流PCMbase64字符串数组
+ * @param {Number} sampleRate - 采样率
+ * @returns {string} 返回一个url字符串。
+ */
+export function convertPCMBase64ToUrl(data, sampleRate) {
+  let result = null
+  if (Array.isArray(data) && data.length > 0) {
+    const audioBuffers = []
+    data.forEach(e => {
+      if (e) audioBuffers.push(convertPCMBase64ToFloat32Array(e))
+    })
+    const allF32Array = mergeFloat32Arrays(audioBuffers)
+    const wav = createWavFile(allF32Array, sampleRate)
+    result = URL.createObjectURL(wav)
+  }
+  return result
+}
+
+/**
+ * 将音频二进制数据流，按照指定时长切割成多个base64字符串数组
+ * @param {Array} arrayBuffer - 音频流二进制数据流
+ * @param {Number} sliceDuration - 切割时长
+ * @param {Number} sampleRate - 采样率
+ * @param {Number} bitDepth - 位深度
+ * @param {Number} channels - 通道数
+ * @returns {Array} 返回一个base64字符串数组。
+ */
+export async function slicePcmBuffer(
+  arrayBuffer,
+  sliceDuration = 0.09,
+  sampleRate = 16000,
+  bitDepth = 16,
+  channels = 1
+) {
+  const bytesPerSample = bitDepth / 8
+  const samplesPerSlice = Math.floor(sliceDuration * sampleRate)
+  const bytesPerSlice = samplesPerSlice * bytesPerSample * channels
+
+  const base64Arr = []
+  for (let start = 0; start < arrayBuffer.byteLength; start += bytesPerSlice) {
+    const end = Math.min(start + bytesPerSlice, arrayBuffer.byteLength)
+    const slicedArrayBuffer = arrayBuffer.slice(start, end)
+    const pcmBlob = new Blob([slicedArrayBuffer], { type: 'audio/pcm' })
+    const blobBase64 = await blobToBase64(pcmBlob)
+    base64Arr.push(blobBase64)
+  }
+  return base64Arr
+}
+
+/**
+ * 将音频流，按照指定时长切割成多个base64字符串数组
+ * @param {Object} audioContext - 音频上下文
+ * @param {Array} audioBuffer - 音频样本数据
+ * @param {Number} sliceDuration - 切割时长
+ * @returns {Array} 返回一个base64字符串数组。
+ */
+export async function sliceAudioBuffer(audioContext, audioBuffer, sliceDuration = 0.09) {
+  const sampleRate = audioBuffer.sampleRate
+  const sliceLength = Math.floor(sliceDuration * sampleRate)
+  const numberOfChannels = audioBuffer.numberOfChannels
+  const totalLength = audioBuffer.length
+
+  const base64Arr = []
+  for (let start = 0; start < totalLength; start += sliceLength) {
+    const end = Math.min(start + sliceLength, totalLength)
+    const slicedAudioBuffer = await createSlicedAudioBuffer(audioContext, audioBuffer, start, end)
+    const wavBlob = await audioBufferToBlob(slicedAudioBuffer)
+    const blobBase64 = await blobToBase64(wavBlob)
+    base64Arr.push(blobBase64)
+  }
+  return base64Arr
+}
+
+/**
+ * audioBuffer转blob
+ * @param {Array} audioBuffer - 音频流PCMbase64字符串数组
+ * @param {String} type - 音频类型
+ * @returns {Blob} 返回一个blob对象
+ */
+export function audioBufferToBlob(audioBuffer, type = 'audio/wav') {
+  const numberOfChannels = audioBuffer.numberOfChannels
+  const sampleRate = audioBuffer.sampleRate
+  const length = audioBuffer.length
+
+  const wavHeader = generateFileHeader(numberOfChannels, sampleRate, length)
+  const channelData = []
+  for (let i = 0; i < numberOfChannels; i++) {
+    channelData.push(audioBuffer.getChannelData(i))
+  }
+
+  const interleavedData = interleave(channelData)
+  const rawData = new Uint8Array(wavHeader.length + interleavedData.length * 2)
+  rawData.set(wavHeader)
+  for (let i = 0; i < interleavedData.length; i++) {
+    const offset = wavHeader.length + i * 2
+    const sample = Math.max(-1, Math.min(1, interleavedData[i]))
+    rawData[offset] = sample * 0x7fff
+    rawData[offset + 1] = (sample * 0x7fff) >> 8
+  }
+
+  return new Blob([rawData], { type })
+}
+
+function createSlicedAudioBuffer(audioContext, audioBuffer, start, end) {
+  const numberOfChannels = audioBuffer.numberOfChannels
+  const length = end - start
+  const slicedAudioBuffer = audioContext.createBuffer(
+    numberOfChannels,
+    length,
+    audioBuffer.sampleRate
+  )
+
+  for (let channel = 0; channel < numberOfChannels; channel++) {
+    const channelData = audioBuffer.getChannelData(channel)
+    const slicedChannelData = channelData.slice(start, end)
+    slicedAudioBuffer.copyToChannel(slicedChannelData, channel)
+  }
+  return slicedAudioBuffer
+}
+
+export function generateFileHeader(numChannels, sampleRate, length) {
+  const buffer = new ArrayBuffer(44)
+  const view = new DataView(buffer)
+
+  // 写入 RIFF 头
+  writeString(view, 0, 'RIFF')
+  view.setUint32(4, 36 + length * numChannels * 2, true)
+  writeString(view, 8, 'WAVE')
+
+  // 写入 fmt 块
+  writeString(view, 12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, numChannels, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * numChannels * 2, true)
+  view.setUint16(32, numChannels * 2, true)
+  view.setUint16(34, 16, true)
+
+  // 写入 data 块
+  writeString(view, 36, 'data')
+  view.setUint32(40, length * numChannels * 2, true)
+
+  return new Uint8Array(buffer)
 }
 
 function writeString(view, offset, string) {
   for (let i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i))
   }
+}
+
+function interleave(channelData) {
+  const numChannels = channelData.length
+  const length = channelData[0].length
+  const result = new Float32Array(length * numChannels)
+
+  for (let i = 0; i < length; i++) {
+    for (let j = 0; j < numChannels; j++) {
+      result[i * numChannels + j] = channelData[j][i]
+    }
+  }
+
+  return result
 }

@@ -6,7 +6,12 @@ export const MEDIA_TYPE = {
 
 export const MODEL_TIMBRE = {
   XIAOCHEN: 'xiaochen', // 小陈
-  TONGTONG: 'tongtong' // 彤彤
+  TONGTONG: 'tongtong', // 彤彤
+  TIANMEINVXING: 'female-tianmei',
+  QINGNIANDAXUESHENG: 'male-qn-daxuesheng',
+  JINGYIGNQINGNIAN: 'male-qn-jingying',
+  MENGMENGNVTONG: 'lovely_girl',
+  SHAONV: 'female-shaonv'
 }
 
 export const RESPONSE_TYPE = {
@@ -39,6 +44,12 @@ export const ANSWER_STATUS = {
   COMPLETE: 'complete', // 完成
   SENSITIVE: 'sensitive', // 遇敏感词
   FAIL: 'fail' // 失败
+}
+
+// 输出音频格式
+export const OUTPUT_TYPE = {
+  MP3: 'mp3', // mp3格式
+  PCM: 'pcm' // pcm格式
 }
 
 // 工具类型
