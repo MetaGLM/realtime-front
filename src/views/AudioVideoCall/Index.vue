@@ -260,18 +260,18 @@ export default {
             this.loopScrollToBotton(); // 开始启动滚动到底部
             console.log("%c 响应事件-回复已创建（开始调用模型）", "color: green");
             break;
-          case SOCKET_STATUS.ASR_COMPLETED: // 用户输入音频的asr文本（异步返回）
+          case SOCKET_STATUS.CONVERSATION_ITEM_INPUT_AUDIO_TRANSCRIPTION_COMPLETED: // 用户输入音频的asr文本（异步返回）
             this.addAudioTextToList(this.requestId, data.transcript, MSG_TYPE.CLIENT); // 将音频文本追加到列表
             console.log(
               "%c 响应事件-用户输入音频的asr文本（异步返回）：" + data.transcript,
               "color: green"
             );
             break;
-          case SOCKET_STATUS.RESPONSE_AUDIO_TXT: // 返回模型音频对应文本
+          case SOCKET_STATUS.RESPONSE_AUDIO_TEXT: // 返回模型音频对应文本
             this.addAudioTextToList(this.responseId, data.delta, MSG_TYPE.SERVER); // 将音频文本追加到列表
             // console.log('%c 响应事件-返回模型音频对应文本', 'color: green')
             break;
-          case SOCKET_STATUS.RESPONSE_AUDIO_TXT_DONE: // 模型文本返回结束
+          case SOCKET_STATUS.RESPONSE_AUDIO_TEXT_DONE: // 模型文本返回结束
             // console.log('%c 响应事件-模型文本返回结束', 'color: green')
             break;
           case SOCKET_STATUS.RESPONSE_AUDIO: // 返回模型音频（delta 是一个 mp3 格式base64 编码的音频块）
@@ -282,7 +282,7 @@ export default {
               "color: green"
             );
             break;
-          case SOCKET_STATUS.RESPONSE_AUDIO_DONE: // 结束回复（status字段表示response的状态completed, cancelled分别对应完成、取消）
+          case SOCKET_STATUS.RESPONSE_DONE: // 结束回复（status字段表示response的状态completed, cancelled分别对应完成、取消）
             this.updateResponsStatus(this.responseId, ANSWER_STATUS.COMPLETE);
             this.resFinished = true;
             console.log(
