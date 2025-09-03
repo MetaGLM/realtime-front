@@ -85,7 +85,6 @@ class SoundVadClass {
       return
     }
     let inputBuffer = null // 原始通道数据
-    let bufferData = null // 录音数据
     const bufferSize = isClientVad ? 4096 : 2048 // 缓冲区大小
     const vadFrame = isClientVad ? 3 : 6 // 帧，每帧4 * 1536 byte，约为100ms，用于VAD检测的有效片段
     const aheadChunks = new FixedQueue(vadFrame) // 队列，用于缓存音频数据
@@ -98,23 +97,6 @@ class SoundVadClass {
     this._scriptProcessorNode.onaudioprocess = async ev => {
       inputBuffer = ev.inputBuffer.getChannelData(0)
       if (inputBuffer && inputBuffer.length > 0) {
-        const outputBuffer = event.outputBuffer.getChannelData(0)
-        // 降噪和音量提升
-        const noiseThreshold = 0.01 // 降噪阈值
-        const volumeBoost = 2 // 音量提升系数
-        for (let i = 0; i < inputBuffer.length; i++) {
-          let sample = inputBuffer[i]
-          // 降噪处理
-          if (Math.abs(sample) < noiseThreshold) {
-            sample = 0
-          }
-          // 音量提升
-          sample *= volumeBoost
-          // 限制音量范围在 -1 到 1 之间
-          sample = Math.max(-1, Math.min(1, sample))
-          outputBuffer[i] = sample
-        }
-        bufferData = new Float32Array(outputBuffer) // float32Array
         if (isClientVad) {
           if (this._isSpeeching) {
             if (aheadChunks.length > 0) {
@@ -122,14 +104,12 @@ class SoundVadClass {
               const aheadChunksData = aheadChunks.getQueue().reduce((a, b) => {
                 return concatFloat32Array(a, b)
               }, new Float32Array([]))
-              bufferData = concatFloat32Array(aheadChunksData, bufferData)
+              inputBuffer = concatFloat32Array(aheadChunksData, inputBuffer)
               aheadChunks.clear()
             }
-            this._recordPCMData = concatFloat32Array(this._recordPCMData, bufferData)
-            const wavBlob = createWavFile(bufferData, this._sampleRate)
-            this._handleListenAudioData(wavBlob)
+            this._recordPCMData = concatFloat32Array(this._recordPCMData, inputBuffer)
           } else {
-            aheadChunks.append(bufferData)
+            aheadChunks.append(new Float32Array(inputBuffer))
           }
         } else {
           if (this._isSpeeching) {
@@ -138,13 +118,13 @@ class SoundVadClass {
               this._recordPCMData = concatFloat32Array(aheadChunksData, this._recordPCMData)
               aheadChunks.clear()
             }
-            this._recordPCMData = concatFloat32Array(this._recordPCMData, bufferData)
+            this._recordPCMData = concatFloat32Array(this._recordPCMData, inputBuffer)
           } else {
-            aheadChunks.append(bufferData)
+            aheadChunks.append(new Float32Array(inputBuffer))
           }
-          const wavBlob = createWavFile(bufferData, this._sampleRate)
-          this._handleListenAudioData(wavBlob)
         }
+        const wavBlob = createWavFile(inputBuffer, this._sampleRate)
+        this._handleListenAudioData(wavBlob)
       }
     }
 
