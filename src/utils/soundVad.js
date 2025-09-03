@@ -108,6 +108,8 @@ class SoundVadClass {
               aheadChunks.clear()
             }
             this._recordPCMData = concatFloat32Array(this._recordPCMData, inputBuffer)
+            const wavBlob = createWavFile(inputBuffer, this._sampleRate)
+            this._handleListenAudioData(wavBlob)
           } else {
             aheadChunks.append(new Float32Array(inputBuffer))
           }
@@ -122,9 +124,9 @@ class SoundVadClass {
           } else {
             aheadChunks.append(new Float32Array(inputBuffer))
           }
+          const wavBlob = createWavFile(inputBuffer, this._sampleRate)
+          this._handleListenAudioData(wavBlob)
         }
-        const wavBlob = createWavFile(inputBuffer, this._sampleRate)
-        this._handleListenAudioData(wavBlob)
       }
     }
 
